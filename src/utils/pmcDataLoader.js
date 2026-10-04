@@ -86,7 +86,26 @@ const allPmcStudents = [];
 const FALLBACK_CLUB_ROSTERS = {
     8: ['Marcus Griffith', 'Jamal Blackman', 'Devon Clarke', 'Kevon Alleyne', 'Tyrese Boyce', 'Shane Goodridge', 'Rico Prescod', 'Dario Thorne', 'Romario Skeete', 'Kemal Harewood', 'Rashad Hinds', 'Jamar Cummins', 'Trevon Brathwaite', 'Jevon Jordan', 'Stefan Pilgrim', 'Kofi Trotman', 'Darnell Walcott', 'Akim Best'],
     9: ['Zico Edmee', 'Ronaldo Best', 'Shaquille Stewart', 'Omari Walrond', 'Tariq Waithe', 'Keon Forde', 'Damian Greenidge', 'Jaden Mayers', 'Nathaniel Barrow', 'Raheem Sobers', 'Keshawn Applewhaite', 'Shakir Gill', 'Dwayne Small', 'Jamarley Husbands', 'Corey Hoyte', 'Tyrique Lashley', 'Malik Grazette', 'Carlson Roach'],
-    17: ['Corey Bridgeman', 'Cliff Gooding-Edghill', 'Shakeel Brown', 'Aiden Phillip', 'Tadj Nyathu', 'Yohann Goddard', 'Javier Smith', 'Tavion Eastmond', 'Christopher Jacobs', 'Jemari Trotman', 'Tre Moore', 'Xavier Archer', 'Josiah Maximilien', 'Andre Brathwaite', 'Chrisheur Harry', 'Shazeef Thompson', 'Kymani Jones']
+    17: [
+        { name: 'Corey Bridgeman', number: 21 },
+        { name: 'Ryan Preston', number: null },
+        { name: 'Cliff Gooding-Edghill', number: 3 },
+        { name: 'Shakeel Brown', number: 31 },
+        { name: 'Tadj Nyathu', number: null },
+        { name: 'Yohann Goddard', number: 14 },
+        { name: 'Javier Smith', number: 8 },
+        { name: 'Tavion Eastmond', number: 10 },
+        { name: 'Christopher Jacobs', number: 7 },
+        { name: 'Jemari Trotman', number: 9 },
+        { name: 'Tre Moore', number: 17 },
+        { name: 'Xavier Archer', number: 22 },
+        { name: 'Darren Sammy Jr', number: null },
+        { name: 'Andre Brathwaite', number: 18 },
+        { name: 'Chriseur Harry', number: 11 },
+        { name: 'Sharzeef Thompson', number: 15 },
+        { name: 'Kymani Jones', number: 20 },
+        { name: 'Kyle Smith', number: null }
+    ]
 };
 
 PMC_SCHOOLS.forEach((club, cIdx) => {
@@ -94,11 +113,14 @@ PMC_SCHOOLS.forEach((club, cIdx) => {
     
     // Explicitly override scraped data if a hardcoded true roster exists
     if (FALLBACK_CLUB_ROSTERS[club.rawId]) {
-        scrapedForClub = FALLBACK_CLUB_ROSTERS[club.rawId].map((name, idx) => ({
-            id: club.rawId * 1000 + idx + 1,
-            name,
-            number: idx + 1
-        }));
+        scrapedForClub = FALLBACK_CLUB_ROSTERS[club.rawId].map((entry, idx) => {
+            const isObj = typeof entry === 'object' && entry !== null;
+            return {
+                id: club.rawId * 1000 + idx + 1,
+                name: isObj ? entry.name : entry,
+                number: isObj ? entry.number : idx + 1
+            };
+        });
     }
     const teamId = `${club.id}-team-PMC`;
     const rng = mulberry32(club.rawId || (cIdx + 1) * 100);
