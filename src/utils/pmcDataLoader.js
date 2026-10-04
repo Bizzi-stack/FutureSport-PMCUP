@@ -85,12 +85,15 @@ const allPmcStudents = [];
 
 const FALLBACK_CLUB_ROSTERS = {
     8: ['Marcus Griffith', 'Jamal Blackman', 'Devon Clarke', 'Kevon Alleyne', 'Tyrese Boyce', 'Shane Goodridge', 'Rico Prescod', 'Dario Thorne', 'Romario Skeete', 'Kemal Harewood', 'Rashad Hinds', 'Jamar Cummins', 'Trevon Brathwaite', 'Jevon Jordan', 'Stefan Pilgrim', 'Kofi Trotman', 'Darnell Walcott', 'Akim Best'],
-    9: ['Zico Edmee', 'Ronaldo Best', 'Shaquille Stewart', 'Omari Walrond', 'Tariq Waithe', 'Keon Forde', 'Damian Greenidge', 'Jaden Mayers', 'Nathaniel Barrow', 'Raheem Sobers', 'Keshawn Applewhaite', 'Shakir Gill', 'Dwayne Small', 'Jamarley Husbands', 'Corey Hoyte', 'Tyrique Lashley', 'Malik Grazette', 'Carlson Roach']
+    9: ['Zico Edmee', 'Ronaldo Best', 'Shaquille Stewart', 'Omari Walrond', 'Tariq Waithe', 'Keon Forde', 'Damian Greenidge', 'Jaden Mayers', 'Nathaniel Barrow', 'Raheem Sobers', 'Keshawn Applewhaite', 'Shakir Gill', 'Dwayne Small', 'Jamarley Husbands', 'Corey Hoyte', 'Tyrique Lashley', 'Malik Grazette', 'Carlson Roach'],
+    17: ['Corey Bridgeman', 'Cliff Gooding-Edghill', 'Shakeel Brown', 'Aiden Phillip', 'Tadj Nyathu', 'Yohann Goddard', 'Javier Smith', 'Tavion Eastmond', 'Christopher Jacobs', 'Jemari Trotman', 'Tre Moore', 'Xavier Archer', 'Josiah Maximilien', 'Andre Brathwaite', 'Chrisheur Harry', 'Shazeef Thompson', 'Kymani Jones']
 };
 
 PMC_SCHOOLS.forEach((club, cIdx) => {
     let scrapedForClub = pmcData.players.filter(p => p.teamId === club.rawId);
-    if (scrapedForClub.length === 0 && FALLBACK_CLUB_ROSTERS[club.rawId]) {
+    
+    // Explicitly override scraped data if a hardcoded true roster exists
+    if (FALLBACK_CLUB_ROSTERS[club.rawId]) {
         scrapedForClub = FALLBACK_CLUB_ROSTERS[club.rawId].map((name, idx) => ({
             id: club.rawId * 1000 + idx + 1,
             name,
