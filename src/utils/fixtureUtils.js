@@ -50,11 +50,11 @@ export const isMatchForTeam = (match, targetSchoolId, targetTeamId, targetSchool
             return true;
         }
 
-        // 2. Exact or Prefix Name Match (avoid short substrings)
+        // 2. Exact or Prefix/Substring Name Match (avoid short substrings)
         if (cleanTargetName && normSideName) {
             if (normSideName === cleanTargetName) return true;
             if (cleanTargetName.length >= 4 && normSideName.length >= 4) {
-                if (normSideName.startsWith(cleanTargetName) || cleanTargetName.startsWith(normSideName)) {
+                if (normSideName.includes(cleanTargetName) || cleanTargetName.includes(normSideName)) {
                     return true;
                 }
             }
@@ -105,7 +105,7 @@ export const getCoachSquadInfo = (match, targetSchoolId, targetTeamId, targetSch
         if (cleanTargetName && normSideName) {
             if (normSideName === cleanTargetName) return true;
             if (cleanTargetName.length >= 4 && normSideName.length >= 4) {
-                if (normSideName.startsWith(cleanTargetName) || cleanTargetName.startsWith(normSideName)) return true;
+                if (normSideName.includes(cleanTargetName) || cleanTargetName.includes(normSideName)) return true;
             }
         }
         return false;
@@ -176,24 +176,34 @@ export const getRelevantCoachMatch = (matchesList, targetSchoolId, targetTeamId,
         })[0];
     }
 
-    // Annotate matches with squad info and finished state
-    const annotated = myMatches.map(m => ({
-        match: m,
-        finished: isMatchFinished(m),
-        squadInfo: getCoachSquadInfo(m, targetSchoolId, targetTeamId, targetSchoolName)
-    }));
+    // Annotate matches with squad info, finished state, and parsed dates
+    const annotated = myMatches.map(m => {
+        let parsedDate = 0;
+        if (m.date) {
+            parsedDate = new Date(m.date).getTime();
+        } else if (m.kickoff) {
+            parsedDate = new Date(m.kickoff).getTime();
+        }
+        return {
+            match: m,
+            finished: isMatchFinished(m),
+            dateMs: parsedDate,
+            squadInfo: getCoachSquadInfo(m, targetSchoolId, targetTeamId, targetSchoolName)
+        };
+    });
 
-    // 2. Non-finished match with submitted Starting XI (sorted by latest submittedAt timestamp)
+    // 2. Non-finished upcoming or scheduled match, sorted by date (closest first)
+    const nonFinishedUpcoming = annotated.filter(a => !a.finished && (a.match.status === 'upcoming' || a.match.status === 'scheduled'));
+    if (nonFinishedUpcoming.length > 0) {
+        nonFinishedUpcoming.sort((a, b) => a.dateMs - b.dateMs);
+        return nonFinishedUpcoming[0].match;
+    }
+
+    // 3. Non-finished match with submitted Starting XI (fallback if no strictly 'upcoming' status but not finished)
     const nonFinishedWithXI = annotated.filter(a => !a.finished && a.squadInfo?.hasSubmittedXI);
     if (nonFinishedWithXI.length > 0) {
         nonFinishedWithXI.sort((a, b) => (b.squadInfo?.submittedTimestamp || 0) - (a.squadInfo?.submittedTimestamp || 0));
         return nonFinishedWithXI[0].match;
-    }
-
-    // 3. Non-finished upcoming or scheduled match
-    const nonFinishedUpcoming = annotated.filter(a => !a.finished && (a.match.status === 'upcoming' || a.match.status === 'scheduled'));
-    if (nonFinishedUpcoming.length > 0) {
-        return nonFinishedUpcoming[0].match;
     }
 
     // 4. Any non-finished match
