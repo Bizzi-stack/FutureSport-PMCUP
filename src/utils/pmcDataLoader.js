@@ -84,8 +84,46 @@ export function generatePmcPerformance(isGk) {
 const allPmcStudents = [];
 
 const FALLBACK_CLUB_ROSTERS = {
-    8: ['Marcus Griffith', 'Jamal Blackman', 'Devon Clarke', 'Kevon Alleyne', 'Tyrese Boyce', 'Shane Goodridge', 'Rico Prescod', 'Dario Thorne', 'Romario Skeete', 'Kemal Harewood', 'Rashad Hinds', 'Jamar Cummins', 'Trevon Brathwaite', 'Jevon Jordan', 'Stefan Pilgrim', 'Kofi Trotman', 'Darnell Walcott', 'Akim Best'],
-    9: ['Zico Edmee', 'Ronaldo Best', 'Shaquille Stewart', 'Omari Walrond', 'Tariq Waithe', 'Keon Forde', 'Damian Greenidge', 'Jaden Mayers', 'Nathaniel Barrow', 'Raheem Sobers', 'Keshawn Applewhaite', 'Shakir Gill', 'Dwayne Small', 'Jamarley Husbands', 'Corey Hoyte', 'Tyrique Lashley', 'Malik Grazette', 'Carlson Roach'],
+    8: [
+        { name: 'Terrel Murphy', number: 13 },
+        { name: 'Ajanie Payne', number: 5 },
+        { name: 'Kimari Clarke', number: 29 },
+        { name: 'Remario Steele', number: 4 },
+        { name: 'Demarko Bynoe', number: 2 },
+        { name: 'Shaka Bishop', number: 19 },
+        { name: 'Thiago Harding', number: 17 },
+        { name: 'Jevere Sampson-Brathwaite', number: 16 },
+        { name: 'Rojae Collins', number: 7 },
+        { name: 'Shane Alleyne', number: 14 },
+        { name: 'Tyrell Walrond', number: 11 },
+        { name: 'Kadeem Brewster', number: 10 },
+        { name: 'Joshua Bayne', number: 18 },
+        { name: 'Remy Samuel', number: 20 },
+        { name: 'Shakeri Blades', number: 28 },
+        { name: 'Bradley Alleyne', number: 8 },
+        { name: 'Shamal Crick', number: 6 },
+        { name: 'Zachari Inniss', number: 1 }
+    ],
+    9: [
+        { name: 'Justin Neil', number: 1 },
+        { name: 'Javon Alleyne', number: 23 },
+        { name: 'Savio Blackman', number: 16 },
+        { name: 'Shamari Best', number: 3 },
+        { name: 'Shaquon Waldrond', number: 14 },
+        { name: 'Devon Wiltshire', number: 15 },
+        { name: 'Reuben Jacobs', number: 8 },
+        { name: 'Zion Gollop', number: 12 },
+        { name: 'Radarico Marques', number: 13 },
+        { name: 'Richem Atherley', number: 11 },
+        { name: 'Shakarie Mottley', number: 9 },
+        { name: 'Shakori Scott', number: 21 },
+        { name: 'Karim Wade', number: 6 },
+        { name: 'Tyrico Bellamy', number: 10 },
+        { name: 'Shakielle Beckles', number: 2 },
+        { name: 'Ramon Rollins', number: 5 },
+        { name: 'Shavon Jones', number: 7 },
+        { name: 'Rajari Rollins', number: 25 }
+    ],
     17: [
         { name: 'Corey Bridgeman', number: 21 },
         { name: 'Ryan Preston', number: null },
