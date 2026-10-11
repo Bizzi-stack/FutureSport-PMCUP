@@ -5,8 +5,11 @@
 
 import { mergeMatchStates, isPmcMatch } from './matchEngine.js';
 
-const SUPABASE_URL = import.meta?.env?.VITE_SUPABASE_URL || (typeof process !== 'undefined' ? process.env?.VITE_SUPABASE_URL : '') || 'https://ixlippjxjecsldkvgqco.supabase.co';
-const SUPABASE_KEY = import.meta?.env?.VITE_SUPABASE_ANON_KEY || (typeof process !== 'undefined' ? process.env?.VITE_SUPABASE_ANON_KEY : '') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4bGlwcGp4amVjc2xka3ZncWNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE3NDg1NDQsImV4cCI6MjEwNzMyNDU0NH0.uXkdQwDypSTQ9p8HRZhlyzRTZRXMdK5qc2mtPY5xtAk';
+const envUrl = import.meta?.env?.VITE_SUPABASE_URL || (typeof process !== 'undefined' ? process.env?.VITE_SUPABASE_URL : '');
+const SUPABASE_URL = (envUrl && !envUrl.includes('ayxcbvzeptwplidkwmob')) ? envUrl : 'https://ixlippjxjecsldkvgqco.supabase.co';
+
+const envKey = import.meta?.env?.VITE_SUPABASE_ANON_KEY || (typeof process !== 'undefined' ? process.env?.VITE_SUPABASE_ANON_KEY : '');
+const SUPABASE_KEY = (envKey && !envUrl?.includes('ayxcbvzeptwplidkwmob')) ? envKey : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4bGlwcGp4amVjc2xka3ZncWNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE3NDg1NDQsImV4cCI6MjEwNzMyNDU0NH0.uXkdQwDypSTQ9p8HRZhlyzRTZRXMdK5qc2mtPY5xtAk';
 const TABLE_URL = `${SUPABASE_URL}/rest/v1/pmc_matches_state`;
 
 const HEADERS = {
