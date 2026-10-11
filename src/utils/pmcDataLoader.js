@@ -1,5 +1,6 @@
 import pmcData from '../data/pmcScrapedData.json' with { type: 'json' };
 import pmcInitialMatches from '../data/pmcInitialMatches.json' with { type: 'json' };
+import pmcBackupData from '../data/pmc_matches_backup_current.json' with { type: 'json' };
 
 export const PMC_YEARS = ['2026-2027'];
 const YEARS = PMC_YEARS;
@@ -288,4 +289,6 @@ export const DEFAULT_COUNTDOWN_PROTOCOL = [
 ];
 
 // 4. Official Prime Minister's Cup Tournament Matches (Opening Matchday: Monday 07 Sep 2026)
-export const PMC_MATCHES = pmcInitialMatches;
+export const PMC_MATCHES = (pmcBackupData?.data?.matches && Array.isArray(pmcBackupData.data.matches) && pmcBackupData.data.matches.length > 0)
+    ? pmcBackupData.data.matches
+    : pmcInitialMatches;

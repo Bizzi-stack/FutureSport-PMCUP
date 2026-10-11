@@ -5,8 +5,8 @@
 
 import { mergeMatchStates, isPmcMatch } from './matchEngine.js';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_URL = import.meta?.env?.VITE_SUPABASE_URL || (typeof process !== 'undefined' ? process.env?.VITE_SUPABASE_URL : '') || 'https://ixlippjxjecsldkvgqco.supabase.co';
+const SUPABASE_KEY = import.meta?.env?.VITE_SUPABASE_ANON_KEY || (typeof process !== 'undefined' ? process.env?.VITE_SUPABASE_ANON_KEY : '') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4bGlwcGp4amVjc2xka3ZncWNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE3NDg1NDQsImV4cCI6MjEwNzMyNDU0NH0.uXkdQwDypSTQ9p8HRZhlyzRTZRXMdK5qc2mtPY5xtAk';
 const TABLE_URL = `${SUPABASE_URL}/rest/v1/pmc_matches_state`;
 
 const HEADERS = {
@@ -44,6 +44,7 @@ if (typeof globalThis !== 'undefined' && typeof BroadcastChannel !== 'undefined'
 let isPushing = false;
 let queuedMatches = null;
 let lastPushedCloudHash = '';
+let currentCloudTimestamp = '';
 
 export function computeMatchesHash(matches) {
     if (!Array.isArray(matches)) return '';
@@ -169,6 +170,7 @@ async function drainCloudPushQueue() {
         }
 
         try {
+            const pushTs = new Date().toISOString();
             const res = await fetch(TABLE_URL, {
                 method: 'POST',
                 headers: {
@@ -178,11 +180,12 @@ async function drainCloudPushQueue() {
                 body: JSON.stringify({
                     id: 'global_matches',
                     data: { matches: finalMatches, updatedAt: Date.now() },
-                    updated_at: new Date().toISOString()
+                    updated_at: pushTs
                 })
             });
             if (res.ok) {
                 lastPushedCloudHash = hash;
+                currentCloudTimestamp = pushTs;
             }
         } catch (err) {
             console.warn('[RealtimeSync] Cloud push warning:', err);
@@ -322,8 +325,31 @@ export async function fetchMatchesFromCloud() {
         if (!res.ok) return null;
         const rows = await res.json();
         if (Array.isArray(rows) && rows.length > 0) {
+            if (rows[0]?.updated_at) {
+                currentCloudTimestamp = rows[0].updated_at;
+            }
             const rawMatches = rows[0]?.data?.matches || null;
             return Array.isArray(rawMatches) ? rawMatches.filter(isPmcMatch) : null;
+        }
+        return null;
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Ultra-lightweight check: queries ONLY the updated_at column (~48 bytes)
+ * instead of the multi-megabyte matches JSON payload on every poll cycle.
+ */
+export async function fetchCloudTimestamp() {
+    try {
+        const res = await fetch(`${TABLE_URL}?id=eq.global_matches&select=updated_at`, {
+            headers: HEADERS
+        });
+        if (!res.ok) return null;
+        const rows = await res.json();
+        if (Array.isArray(rows) && rows.length > 0) {
+            return rows[0]?.updated_at || null;
         }
         return null;
     } catch {
@@ -335,8 +361,9 @@ export function subscribeToRealtimeSync(onMatchesUpdate) {
     if (typeof window === 'undefined') return () => {};
 
     let localHash = '';
+    let isFetching = false;
 
-    // BroadcastChannel listener for tabs
+    // BroadcastChannel listener for instant intra-browser tabs
     if (broadcastChannel) {
         const handleBroadcast = (e) => {
             const matches = e.data?.matches;
@@ -352,23 +379,57 @@ export function subscribeToRealtimeSync(onMatchesUpdate) {
         broadcastChannel.addEventListener('message', handleBroadcast);
     }
 
-    // Supabase Cloud Polling (every 1.2s) for cross-device sync of PMC production
-    const pollMatches = async () => {
-        const cloudMatches = await fetchMatchesFromCloud();
-        if (cloudMatches && Array.isArray(cloudMatches) && cloudMatches.length > 0) {
-            const pmcOnly = cloudMatches.filter(isPmcMatch);
-            const newHash = computeMatchesHash(pmcOnly);
-            if (newHash !== localHash) {
-                localHash = newHash;
-                onMatchesUpdate(pmcOnly);
+    const syncFullFromCloud = async () => {
+        if (isFetching) return;
+        isFetching = true;
+        try {
+            const cloudMatches = await fetchMatchesFromCloud();
+            if (cloudMatches && Array.isArray(cloudMatches) && cloudMatches.length > 0) {
+                const pmcOnly = cloudMatches.filter(isPmcMatch);
+                const newHash = computeMatchesHash(pmcOnly);
+                if (newHash !== localHash) {
+                    localHash = newHash;
+                    onMatchesUpdate(pmcOnly);
+                }
             }
+        } finally {
+            isFetching = false;
         }
     };
 
-    pollMatches();
-    const intervalId = setInterval(pollMatches, 1200);
+    // Lightweight 48-byte poll: checks updated_at every 2.5s.
+    // Full payload is fetched ONLY when updated_at actually changes.
+    const pollTimestampCheck = async () => {
+        if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+            return; // Pause bandwidth usage while screen is locked or tab in background
+        }
+
+        try {
+            const cloudTs = await fetchCloudTimestamp();
+            if (cloudTs && cloudTs !== currentCloudTimestamp) {
+                currentCloudTimestamp = cloudTs;
+                await syncFullFromCloud();
+            }
+        } catch {}
+    };
+
+    // Initial mount load
+    syncFullFromCloud();
+    const intervalId = setInterval(pollTimestampCheck, 2500);
+
+    const handleVisibility = () => {
+        if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+            pollTimestampCheck();
+        }
+    };
+    if (typeof document !== 'undefined') {
+        document.addEventListener('visibilitychange', handleVisibility);
+    }
 
     return () => {
         clearInterval(intervalId);
+        if (typeof document !== 'undefined') {
+            document.removeEventListener('visibilitychange', handleVisibility);
+        }
     };
 }

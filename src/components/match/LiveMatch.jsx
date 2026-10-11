@@ -255,7 +255,6 @@ export default function LiveMatch({
 
     // Fallback if players are missing from global state
     const homePlayers = useMemo(() => {
-        if (matchData.homePlayers && matchData.homePlayers.length > 0) return matchData.homePlayers;
         const targetTeamName = (matchData.homeTeam || '').toLowerCase();
         const cleanHomeId = (homeTeamId || '').replace(/-team-(pmc|ucl|boys|girls|u\d+)/gi, '').toLowerCase();
         const fullRoster = allStudents.filter(s => {
@@ -271,18 +270,16 @@ export default function LiveMatch({
             );
         }).map(s => s.id);
 
-        if (homeSquadSelection?.startingXI || homeSquadSelection?.benchPlayers) {
-            const squadIds = [
-                ...(homeSquadSelection.startingXI || []),
-                ...(homeSquadSelection.benchPlayers || [])
-            ].filter(Boolean);
-            if (squadIds.length > 0) return Array.from(new Set([...squadIds, ...fullRoster]));
-        }
-        return fullRoster;
+        const activeHomeSquad = matchDataRef.current?.homeSquadSelection || homeSquadSelection;
+        const squadIds = [
+            ...(activeHomeSquad?.startingXI || []),
+            ...(activeHomeSquad?.benchPlayers || [])
+        ].filter(Boolean);
+
+        return Array.from(new Set([...squadIds, ...(matchData.homePlayers || []), ...fullRoster]));
     }, [matchData.homePlayers, homeSquadSelection, matchData.homeTeam, homeTeamId, allStudents, year]);
 
     const awayPlayers = useMemo(() => {
-        if (matchData.awayPlayers && matchData.awayPlayers.length > 0) return matchData.awayPlayers;
         const targetTeamName = (matchData.awayTeam || '').toLowerCase();
         const cleanAwayId = (awayTeamId || '').replace(/-team-(pmc|ucl|boys|girls|u\d+)/gi, '').toLowerCase();
         const fullRoster = allStudents.filter(s => {
@@ -298,14 +295,13 @@ export default function LiveMatch({
             );
         }).map(s => s.id);
 
-        if (awaySquadSelection?.startingXI || awaySquadSelection?.benchPlayers) {
-            const squadIds = [
-                ...(awaySquadSelection.startingXI || []),
-                ...(awaySquadSelection.benchPlayers || [])
-            ].filter(Boolean);
-            if (squadIds.length > 0) return Array.from(new Set([...squadIds, ...fullRoster]));
-        }
-        return fullRoster;
+        const activeAwaySquad = matchDataRef.current?.awaySquadSelection || awaySquadSelection;
+        const squadIds = [
+            ...(activeAwaySquad?.startingXI || []),
+            ...(activeAwaySquad?.benchPlayers || [])
+        ].filter(Boolean);
+
+        return Array.from(new Set([...squadIds, ...(matchData.awayPlayers || []), ...fullRoster]));
     }, [matchData.awayPlayers, awaySquadSelection, matchData.awayTeam, awayTeamId, allStudents, year]);
 
     // Starters and Bench players from Coach selection (with fallbacks if none submitted)
@@ -722,34 +718,69 @@ export default function LiveMatch({
             const effectiveRunning = isTerminated ? false : !isPaused;
             const effectiveClockUpdatedAt = lastClockUpdatedAtRef.current || clockState.clockUpdatedAt || currentUpdatedAt;
 
-            const effectiveHomeXI = (homeSquadSelection?.startingXI?.filter(Boolean)?.length === 11)
-                ? homeSquadSelection.startingXI.filter(Boolean)
+            const currentHomeSquad = matchDataRef.current?.homeSquadSelection || homeSquadSelection;
+            const currentAwaySquad = matchDataRef.current?.awaySquadSelection || awaySquadSelection;
+
+            const effectiveHomeXI = (currentHomeSquad?.startingXI?.filter(Boolean)?.length === 11)
+                ? currentHomeSquad.startingXI.filter(Boolean)
                 : (homeStarters.length >= 11 ? homeStarters.slice(0, 11) : homePlayers.slice(0, 11));
-            const effectiveHomeBench = (homeSquadSelection?.benchPlayers?.length > 0)
-                ? homeSquadSelection.benchPlayers
+            const effectiveHomeBench = (currentHomeSquad?.benchPlayers?.length > 0)
+                ? currentHomeSquad.benchPlayers
                 : (homeBench.length > 0 ? homeBench : homePlayers.slice(11));
 
-            const effectiveAwayXI = (awaySquadSelection?.startingXI?.filter(Boolean)?.length === 11)
-                ? awaySquadSelection.startingXI.filter(Boolean)
+            const effectiveAwayXI = (currentAwaySquad?.startingXI?.filter(Boolean)?.length === 11)
+                ? currentAwaySquad.startingXI.filter(Boolean)
                 : (awayStarters.length >= 11 ? awayStarters.slice(0, 11) : awayPlayers.slice(0, 11));
-            const effectiveAwayBench = (awaySquadSelection?.benchPlayers?.length > 0)
-                ? awaySquadSelection.benchPlayers
+            const effectiveAwayBench = (currentAwaySquad?.benchPlayers?.length > 0)
+                ? currentAwaySquad.benchPlayers
                 : (awayBench.length > 0 ? awayBench : awayPlayers.slice(11));
 
-            const effectiveHomeSquad = {
-                formation: homeSquadSelection?.formation || '4-3-3',
+            const effectiveHomeSquad = currentHomeSquad ? {
+                ...currentHomeSquad,
+                formation: currentHomeSquad.formation || '4-3-3',
+                startingXI: (currentHomeSquad.startingXI && currentHomeSquad.startingXI.filter(Boolean).length > 0) ? currentHomeSquad.startingXI.filter(Boolean) : effectiveHomeXI,
+                benchPlayers: currentHomeSquad.benchPlayers || effectiveHomeBench,
+                validationStatus: currentHomeSquad.validationStatus || 'approved',
+                captainId: currentHomeSquad.captainId || effectiveHomeXI[0] || null,
+                lastModified: currentHomeSquad.lastModified || currentUpdatedAt
+            } : {
+                formation: '4-3-3',
                 startingXI: effectiveHomeXI,
                 benchPlayers: effectiveHomeBench,
                 validationStatus: 'approved',
-                captainId: homeSquadSelection?.captainId || effectiveHomeXI[0] || null
+                captainId: effectiveHomeXI[0] || null,
+                lastModified: currentUpdatedAt
             };
-            const effectiveAwaySquad = {
-                formation: awaySquadSelection?.formation || '4-3-3',
+
+            const effectiveAwaySquad = currentAwaySquad ? {
+                ...currentAwaySquad,
+                formation: currentAwaySquad.formation || '4-3-3',
+                startingXI: (currentAwaySquad.startingXI && currentAwaySquad.startingXI.filter(Boolean).length > 0) ? currentAwaySquad.startingXI.filter(Boolean) : effectiveAwayXI,
+                benchPlayers: currentAwaySquad.benchPlayers || effectiveAwayBench,
+                validationStatus: currentAwaySquad.validationStatus || 'approved',
+                captainId: currentAwaySquad.captainId || effectiveAwayXI[0] || null,
+                lastModified: currentAwaySquad.lastModified || currentUpdatedAt
+            } : {
+                formation: '4-3-3',
                 startingXI: effectiveAwayXI,
                 benchPlayers: effectiveAwayBench,
                 validationStatus: 'approved',
-                captainId: awaySquadSelection?.captainId || effectiveAwayXI[0] || null
+                captainId: effectiveAwayXI[0] || null,
+                lastModified: currentUpdatedAt
             };
+
+            const combinedHomePlayers = Array.from(new Set([
+                ...(effectiveHomeSquad.startingXI || []),
+                ...(effectiveHomeSquad.benchPlayers || []),
+                ...(matchDataRef.current?.homePlayers || []),
+                ...homePlayers
+            ]));
+            const combinedAwayPlayers = Array.from(new Set([
+                ...(effectiveAwaySquad.startingXI || []),
+                ...(effectiveAwaySquad.benchPlayers || []),
+                ...(matchDataRef.current?.awayPlayers || []),
+                ...awayPlayers
+            ]));
 
             const updatedLiveState = {
                 ...(matchDataRef.current?.liveState || clockState || {}),
@@ -789,10 +820,10 @@ export default function LiveMatch({
                 tombstoneEventIds,
                 updatedAt: currentUpdatedAt,
                 version: nextVersion,
-                homeSquadSelection: matchDataRef.current?.homeSquadSelection || effectiveHomeSquad,
-                awaySquadSelection: matchDataRef.current?.awaySquadSelection || effectiveAwaySquad,
-                homePlayers: (matchDataRef.current?.homePlayers && matchDataRef.current.homePlayers.length > 0) ? matchDataRef.current.homePlayers : homePlayers,
-                awayPlayers: (matchDataRef.current?.awayPlayers && matchDataRef.current.awayPlayers.length > 0) ? matchDataRef.current.awayPlayers : awayPlayers,
+                homeSquadSelection: effectiveHomeSquad,
+                awaySquadSelection: effectiveAwaySquad,
+                homePlayers: combinedHomePlayers,
+                awayPlayers: combinedAwayPlayers,
                 liveState: updatedLiveState,
                 refereeLiveState: updatedRefereeState
             });
@@ -1111,37 +1142,75 @@ export default function LiveMatch({
             const targetMatchday = matchday || matchData?.matchday || matchProp?.matchday || 'Matchday 1';
             const effectivePossession = livePossession || matchData?.possession || matchProp?.possession || matchData?.liveState?.possession || { homePct: 50, awayPct: 50 };
 
-            const effectiveHomeXI = (homeSquadSelection?.startingXI?.filter(Boolean)?.length === 11)
-                ? homeSquadSelection.startingXI.filter(Boolean)
+            const currentHomeSquad = matchDataRef.current?.homeSquadSelection || matchData?.homeSquadSelection || homeSquadSelection;
+            const currentAwaySquad = matchDataRef.current?.awaySquadSelection || matchData?.awaySquadSelection || awaySquadSelection;
+
+            const effectiveHomeXI = (currentHomeSquad?.startingXI?.filter(Boolean)?.length === 11)
+                ? currentHomeSquad.startingXI.filter(Boolean)
                 : (homeStarters.length >= 11 ? homeStarters.slice(0, 11) : homePlayers.slice(0, 11));
-            const effectiveHomeBench = (homeSquadSelection?.benchPlayers?.length > 0)
-                ? homeSquadSelection.benchPlayers
+            const effectiveHomeBench = (currentHomeSquad?.benchPlayers?.length > 0)
+                ? currentHomeSquad.benchPlayers
                 : (homeBench.length > 0 ? homeBench : homePlayers.slice(11));
 
-            const effectiveAwayXI = (awaySquadSelection?.startingXI?.filter(Boolean)?.length === 11)
-                ? awaySquadSelection.startingXI.filter(Boolean)
+            const effectiveAwayXI = (currentAwaySquad?.startingXI?.filter(Boolean)?.length === 11)
+                ? currentAwaySquad.startingXI.filter(Boolean)
                 : (awayStarters.length >= 11 ? awayStarters.slice(0, 11) : awayPlayers.slice(0, 11));
-            const effectiveAwayBench = (awaySquadSelection?.benchPlayers?.length > 0)
-                ? awaySquadSelection.benchPlayers
+            const effectiveAwayBench = (currentAwaySquad?.benchPlayers?.length > 0)
+                ? currentAwaySquad.benchPlayers
                 : (awayBench.length > 0 ? awayBench : awayPlayers.slice(11));
 
-            const effectiveHomeSquad = {
-                formation: homeSquadSelection?.formation || '4-3-3',
+            const effectiveHomeSquad = currentHomeSquad ? {
+                ...currentHomeSquad,
+                formation: currentHomeSquad.formation || '4-3-3',
+                startingXI: (currentHomeSquad.startingXI && currentHomeSquad.startingXI.filter(Boolean).length > 0) ? currentHomeSquad.startingXI.filter(Boolean) : effectiveHomeXI,
+                benchPlayers: currentHomeSquad.benchPlayers || effectiveHomeBench,
+                validationStatus: 'approved',
+                captainId: currentHomeSquad.captainId || effectiveHomeXI[0] || null,
+                lastModified: currentHomeSquad.lastModified || now,
+                submittedAt: currentHomeSquad.submittedAt || new Date(now).toISOString()
+            } : {
+                formation: '4-3-3',
                 startingXI: effectiveHomeXI,
                 benchPlayers: effectiveHomeBench,
                 validationStatus: 'approved',
-                captainId: homeSquadSelection?.captainId || effectiveHomeXI[0] || null
+                captainId: effectiveHomeXI[0] || null,
+                lastModified: now,
+                submittedAt: new Date(now).toISOString()
             };
-            const effectiveAwaySquad = {
-                formation: awaySquadSelection?.formation || '4-3-3',
+
+            const effectiveAwaySquad = currentAwaySquad ? {
+                ...currentAwaySquad,
+                formation: currentAwaySquad.formation || '4-3-3',
+                startingXI: (currentAwaySquad.startingXI && currentAwaySquad.startingXI.filter(Boolean).length > 0) ? currentAwaySquad.startingXI.filter(Boolean) : effectiveAwayXI,
+                benchPlayers: currentAwaySquad.benchPlayers || effectiveAwayBench,
+                validationStatus: 'approved',
+                captainId: currentAwaySquad.captainId || effectiveAwayXI[0] || null,
+                lastModified: currentAwaySquad.lastModified || now,
+                submittedAt: currentAwaySquad.submittedAt || new Date(now).toISOString()
+            } : {
+                formation: '4-3-3',
                 startingXI: effectiveAwayXI,
                 benchPlayers: effectiveAwayBench,
                 validationStatus: 'approved',
-                captainId: awaySquadSelection?.captainId || effectiveAwayXI[0] || null
+                captainId: effectiveAwayXI[0] || null,
+                lastModified: now,
+                submittedAt: new Date(now).toISOString()
             };
 
-            const finalHomePlayers = (homePlayers && homePlayers.length > 0) ? homePlayers : [...effectiveHomeXI, ...effectiveHomeBench];
-            const finalAwayPlayers = (awayPlayers && awayPlayers.length > 0) ? awayPlayers : [...effectiveAwayXI, ...effectiveAwayBench];
+            const finalHomePlayers = Array.from(new Set([
+                ...(effectiveHomeSquad.startingXI || []),
+                ...(effectiveHomeSquad.benchPlayers || []),
+                ...(matchDataRef.current?.homePlayers || []),
+                ...(matchData?.homePlayers || []),
+                ...homePlayers
+            ]));
+            const finalAwayPlayers = Array.from(new Set([
+                ...(effectiveAwaySquad.startingXI || []),
+                ...(effectiveAwaySquad.benchPlayers || []),
+                ...(matchDataRef.current?.awayPlayers || []),
+                ...(matchData?.awayPlayers || []),
+                ...awayPlayers
+            ]));
 
             const finalMatchPayload = {
                 ...(matchData || matchProp || {}),

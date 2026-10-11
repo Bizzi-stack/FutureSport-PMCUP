@@ -2752,13 +2752,19 @@ export default function CommissionerDashboard({
                     }}
                     onApplyCorrection={(matchId, correctionData) => {
                         const squadKey = correctionData.teamSide === 'home' ? 'homeSquadSelection' : 'awaySquadSelection';
+                        const currentSquad = currentActiveCountdownMatch[squadKey] || {};
+                        const updatedSquad = {
+                            ...(correctionData.updatedSquad || currentSquad),
+                            lastModified: Date.now()
+                        };
                         const updatedMatch = {
                             ...currentActiveCountdownMatch,
-                            [squadKey]: correctionData.updatedSquad || currentActiveCountdownMatch[squadKey],
+                            [squadKey]: updatedSquad,
                             preKickoffCorrections: [
                                 ...(currentActiveCountdownMatch.preKickoffCorrections || []),
                                 correctionData
-                            ]
+                            ],
+                            updatedAt: Date.now()
                         };
                         onUpdateMatch(updatedMatch);
                         setActiveCountdownMatch(updatedMatch);

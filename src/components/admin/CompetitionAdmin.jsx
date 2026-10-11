@@ -435,23 +435,28 @@ export default function CompetitionAdmin({ schools, teams, matches = [], allStud
 
                                         // Master Quick Approve Both Squads
                                         const handleApproveAllSquads = () => {
+                                            const now = Date.now();
+                                            const nowIso = new Date(now).toISOString();
                                             const updated = {
                                                 ...m,
                                                 validationStatus: 'approved',
-                                                validatedAt: new Date().toISOString(),
+                                                validatedAt: nowIso,
                                                 validatedBy: 'Super Administrator',
                                                 homeSquadSelection: homeSquad ? {
                                                     ...homeSquad,
                                                     validationStatus: 'approved',
-                                                    validatedAt: new Date().toISOString(),
-                                                    validatedBy: 'Super Administrator'
+                                                    validatedAt: nowIso,
+                                                    validatedBy: 'Super Administrator',
+                                                    lastModified: now
                                                 } : homeSquad,
                                                 awaySquadSelection: awaySquad ? {
                                                     ...awaySquad,
                                                     validationStatus: 'approved',
-                                                    validatedAt: new Date().toISOString(),
-                                                    validatedBy: 'Super Administrator'
-                                                } : awaySquad
+                                                    validatedAt: nowIso,
+                                                    validatedBy: 'Super Administrator',
+                                                    lastModified: now
+                                                } : awaySquad,
+                                                updatedAt: now
                                             };
                                             if (onUpdateMatch) onUpdateMatch(updated);
                                             setAdminAlertToast(`✓ Both Squads Approved & Certified for ${homeName} vs ${awayName}!`);
@@ -472,15 +477,19 @@ export default function CompetitionAdmin({ schools, teams, matches = [], allStud
                                             const isRejected = squad.validationStatus === 'rejected';
 
                                             const handleApproveSingle = () => {
+                                                const now = Date.now();
+                                                const nowIso = new Date(now).toISOString();
                                                 const squadKey = teamSide === 'home' ? 'homeSquadSelection' : 'awaySquadSelection';
                                                 const updated = {
                                                     ...m,
                                                     [squadKey]: {
                                                         ...squad,
                                                         validationStatus: 'approved',
-                                                        validatedAt: new Date().toISOString(),
-                                                        validatedBy: 'Super Administrator'
-                                                    }
+                                                        validatedAt: nowIso,
+                                                        validatedBy: 'Super Administrator',
+                                                        lastModified: now
+                                                    },
+                                                    updatedAt: now
                                                 };
                                                 if (onUpdateMatch) onUpdateMatch(updated);
                                                 setAdminAlertToast(`✓ ${teamName} Squad Approved!`);
@@ -490,6 +499,8 @@ export default function CompetitionAdmin({ schools, teams, matches = [], allStud
                                             const handleRejectSingle = () => {
                                                 const reason = window.prompt(`Enter rejection reason for ${teamName}:`, 'Missing player ID verification or ineligible squad assignment.');
                                                 if (!reason) return;
+                                                const now = Date.now();
+                                                const nowIso = new Date(now).toISOString();
                                                 const squadKey = teamSide === 'home' ? 'homeSquadSelection' : 'awaySquadSelection';
                                                 const updated = {
                                                     ...m,
@@ -497,9 +508,11 @@ export default function CompetitionAdmin({ schools, teams, matches = [], allStud
                                                         ...squad,
                                                         validationStatus: 'rejected',
                                                         rejectionReason: reason,
-                                                        validatedAt: new Date().toISOString(),
-                                                        validatedBy: 'Super Administrator'
-                                                    }
+                                                        validatedAt: nowIso,
+                                                        validatedBy: 'Super Administrator',
+                                                        lastModified: now
+                                                    },
+                                                    updatedAt: now
                                                 };
                                                 if (onUpdateMatch) onUpdateMatch(updated);
                                                 setAdminAlertToast(`✕ ${teamName} Squad Flagged for Changes.`);

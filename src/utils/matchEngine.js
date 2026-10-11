@@ -302,28 +302,89 @@ export function mergeMatchStates(localMatch, incomingMatch) {
 
     // Squad selection preservation: Select by newest lastModified / submittedAt timestamp,
     // and protect against accidental null/undefined clobbering of configured squads.
+    const getSquadTimestamp = (sq, fallbackMatchTime = 0) => {
+        if (!sq) return 0;
+        const candidates = [sq.lastModified, sq.submittedAt, sq.confirmedAt, sq.validatedAt, sq.updatedAt, fallbackMatchTime];
+        for (const val of candidates) {
+            if (val == null) continue;
+            if (typeof val === 'number' && !isNaN(val) && val > 0) return val;
+            if (typeof val === 'string') {
+                const parsed = Date.parse(val);
+                if (!isNaN(parsed) && parsed > 0) return parsed;
+                const num = Number(val);
+                if (!isNaN(num) && num > 0) return num;
+            }
+        }
+        return 0;
+    };
+
+    const countSelectedPlayers = (sq) => {
+        if (!sq) return 0;
+        const xiCount = (sq.startingXI || []).filter(Boolean).length;
+        const benchCount = (sq.benchPlayers || sq.substitutes || []).filter(Boolean).length;
+        return xiCount + benchCount;
+    };
+
     const resolveSquad = (localSq, incSq) => {
         if (localSq && !incSq) return localSq;
         if (!localSq && incSq) return incSq;
         if (!localSq && !incSq) return null;
-        // Prefer a squad with an explicit lastModified over one without
-        const localHasLM = !!(localSq.lastModified || localSq.submittedAt);
-        const incHasLM = !!(incSq.lastModified || incSq.submittedAt);
-        if (localHasLM && !incHasLM) return localSq;
-        if (!localHasLM && incHasLM) return incSq;
-        const localMod = Number(localSq.lastModified || localSq.submittedAt || localSq.updatedAt || localTime || 0);
-        const incMod = Number(incSq.lastModified || incSq.submittedAt || incSq.updatedAt || incTime || 0);
-        return incMod >= localMod ? incSq : localSq;
+
+        const localCount = countSelectedPlayers(localSq);
+        const incCount = countSelectedPlayers(incSq);
+
+        if (localCount > 0 && incCount === 0) return localSq;
+        if (incCount > 0 && localCount === 0) return incSq;
+
+        const localHasExplicit = !!(localSq.lastModified || localSq.submittedAt || localSq.confirmedAt);
+        const incHasExplicit = !!(incSq.lastModified || incSq.submittedAt || incSq.confirmedAt);
+
+        // A squad with explicit modification/submission always beats an unmodified prepopulated squad
+        if (localHasExplicit && !incHasExplicit) return localSq;
+        if (!localHasExplicit && incHasExplicit) return incSq;
+
+        const localMod = getSquadTimestamp(localSq, localTime);
+        const incMod = getSquadTimestamp(incSq, incTime);
+
+        if (incMod > 0 && localMod > 0) {
+            return incMod >= localMod ? incSq : localSq;
+        }
+        if (incMod > 0 && localMod === 0) return incSq;
+        if (localMod > 0 && incMod === 0) return localSq;
+
+        if (incCount !== localCount) {
+            return incCount > localCount ? incSq : localSq;
+        }
+
+        return incTime >= localTime ? incSq : localSq;
     };
 
     const resolvedHomeSquad = resolveSquad(localMatch.homeSquadSelection, incomingMatch.homeSquadSelection);
     const resolvedAwaySquad = resolveSquad(localMatch.awaySquadSelection, incomingMatch.awaySquadSelection);
 
-    const homePlayersList = (base.homePlayers && base.homePlayers.length > 0)
-        ? base.homePlayers
+    const squadHomeIds = [
+        ...(resolvedHomeSquad?.startingXI || []),
+        ...(resolvedHomeSquad?.benchPlayers || resolvedHomeSquad?.substitutes || [])
+    ].filter(Boolean);
+    const baseHomePlayers = (incomingMatch.homePlayers && incomingMatch.homePlayers.length > 0) 
+        ? incomingMatch.homePlayers 
+        : ((localMatch.homePlayers && localMatch.homePlayers.length > 0) ? localMatch.homePlayers : (base.homePlayers || []));
+    const finalHomePlayers = Array.from(new Set([...squadHomeIds, ...baseHomePlayers]));
+
+    const squadAwayIds = [
+        ...(resolvedAwaySquad?.startingXI || []),
+        ...(resolvedAwaySquad?.benchPlayers || resolvedAwaySquad?.substitutes || [])
+    ].filter(Boolean);
+    const baseAwayPlayers = (incomingMatch.awayPlayers && incomingMatch.awayPlayers.length > 0) 
+        ? incomingMatch.awayPlayers 
+        : ((localMatch.awayPlayers && localMatch.awayPlayers.length > 0) ? localMatch.awayPlayers : (base.awayPlayers || []));
+    const finalAwayPlayers = Array.from(new Set([...squadAwayIds, ...baseAwayPlayers]));
+
+    const homePlayersList = (finalHomePlayers && finalHomePlayers.length > 0)
+        ? finalHomePlayers
         : (resolvedHomeSquad?.startingXI || []);
-    const awayPlayersList = (base.awayPlayers && base.awayPlayers.length > 0)
-        ? base.awayPlayers
+    const awayPlayersList = (finalAwayPlayers && finalAwayPlayers.length > 0)
+        ? finalAwayPlayers
         : (resolvedAwaySquad?.startingXI || []);
 
     let homeScore = base.homeScore;
@@ -338,14 +399,6 @@ export function mergeMatchStates(localMatch, incomingMatch) {
         homeScore = rec.homeScore;
         awayScore = rec.awayScore;
     }
-
-    const finalHomePlayers = (incomingMatch.homePlayers && incomingMatch.homePlayers.length > 0) 
-        ? incomingMatch.homePlayers 
-        : ((localMatch.homePlayers && localMatch.homePlayers.length > 0) ? localMatch.homePlayers : base.homePlayers);
-        
-    const finalAwayPlayers = (incomingMatch.awayPlayers && incomingMatch.awayPlayers.length > 0) 
-        ? incomingMatch.awayPlayers 
-        : ((localMatch.awayPlayers && localMatch.awayPlayers.length > 0) ? localMatch.awayPlayers : base.awayPlayers);
 
     const merged = {
         ...base,

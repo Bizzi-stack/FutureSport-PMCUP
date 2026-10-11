@@ -192,10 +192,20 @@ export const getRelevantCoachMatch = (matchesList, targetSchoolId, targetTeamId,
         };
     });
 
-    // 2. Non-finished upcoming or scheduled match, sorted by date (closest first)
+    // 2. Non-finished upcoming or scheduled match
     const nonFinishedUpcoming = annotated.filter(a => !a.finished && (a.match.status === 'upcoming' || a.match.status === 'scheduled'));
     if (nonFinishedUpcoming.length > 0) {
-        nonFinishedUpcoming.sort((a, b) => a.dateMs - b.dateMs);
+        nonFinishedUpcoming.sort((a, b) => {
+            if (a.dateMs && b.dateMs && a.dateMs !== b.dateMs) {
+                return a.dateMs - b.dateMs;
+            }
+            if (a.dateMs && !b.dateMs) return -1;
+            if (!a.dateMs && b.dateMs) return 1;
+            const bSub = b.squadInfo?.submittedTimestamp || 0;
+            const aSub = a.squadInfo?.submittedTimestamp || 0;
+            if (bSub !== aSub) return bSub - aSub;
+            return 0;
+        });
         return nonFinishedUpcoming[0].match;
     }
 
