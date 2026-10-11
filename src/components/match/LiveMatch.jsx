@@ -232,6 +232,10 @@ export default function LiveMatch({
         homeSquadSelection, awaySquadSelection
     } = matchData;
     
+    const matchDataRef = useRef(matchData);
+    const isEndingRef = useRef(false);
+    matchDataRef.current = matchData;
+
     // Authorized Match Controllers (Referees, Master Loggers, Pitchside Analysts, Admins)
     const isMasterLogger = useMemo(() => {
         if (!currentAnalyst) return true; // Default fallback if not specified
@@ -452,12 +456,6 @@ export default function LiveMatch({
     const [showConfirm, setShowConfirm] = useState(false);
     const [isSubmittingEnd, setIsSubmittingEnd] = useState(false);
     const [hoveredBtn, setHoveredBtn] = useState(null);  // `${playerId}-${actionKey}`
-
-    const matchDataRef = useRef(matchData);
-    const isEndingRef = useRef(false);
-    useEffect(() => {
-        matchDataRef.current = matchData;
-    }, [matchData]);
 
     const [homeViewMode, setHomeViewMode] = useState('list'); // 'list' | 'pitch'
     const [awayViewMode, setAwayViewMode] = useState('list'); // 'list' | 'pitch'
