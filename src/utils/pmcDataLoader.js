@@ -1,5 +1,6 @@
 import pmcData from '../data/pmcScrapedData.json' with { type: 'json' };
 import pmcInitialMatches from '../data/pmcInitialMatches.json' with { type: 'json' };
+import pmcBackupData from '../data/pmc_matches_backup_current.json' with { type: 'json' };
 
 export const PMC_YEARS = ['2026-2027'];
 const YEARS = PMC_YEARS;
@@ -84,18 +85,81 @@ export function generatePmcPerformance(isGk) {
 const allPmcStudents = [];
 
 const FALLBACK_CLUB_ROSTERS = {
-    8: ['Marcus Griffith', 'Jamal Blackman', 'Devon Clarke', 'Kevon Alleyne', 'Tyrese Boyce', 'Shane Goodridge', 'Rico Prescod', 'Dario Thorne', 'Romario Skeete', 'Kemal Harewood', 'Rashad Hinds', 'Jamar Cummins', 'Trevon Brathwaite', 'Jevon Jordan', 'Stefan Pilgrim', 'Kofi Trotman', 'Darnell Walcott', 'Akim Best'],
-    9: ['Zico Edmee', 'Ronaldo Best', 'Shaquille Stewart', 'Omari Walrond', 'Tariq Waithe', 'Keon Forde', 'Damian Greenidge', 'Jaden Mayers', 'Nathaniel Barrow', 'Raheem Sobers', 'Keshawn Applewhaite', 'Shakir Gill', 'Dwayne Small', 'Jamarley Husbands', 'Corey Hoyte', 'Tyrique Lashley', 'Malik Grazette', 'Carlson Roach']
+    8: [
+        { name: 'Terrel Murphy', number: 13 },
+        { name: 'Ajanie Payne', number: 5 },
+        { name: 'Kimari Clarke', number: 29 },
+        { name: 'Remario Steele', number: 4 },
+        { name: 'Demarko Bynoe', number: 2 },
+        { name: 'Shaka Bishop', number: 19 },
+        { name: 'Thiago Harding', number: 17 },
+        { name: 'Jevere Sampson-Brathwaite', number: 16 },
+        { name: 'Rojae Collins', number: 7 },
+        { name: 'Shane Alleyne', number: 14 },
+        { name: 'Tyrell Walrond', number: 11 },
+        { name: 'Kadeem Brewster', number: 10 },
+        { name: 'Joshua Bayne', number: 18 },
+        { name: 'Remy Samuel', number: 20 },
+        { name: 'Shakeri Blades', number: 28 },
+        { name: 'Bradley Alleyne', number: 8 },
+        { name: 'Shamal Crick', number: 6 },
+        { name: 'Zachari Inniss', number: 1 }
+    ],
+    9: [
+        { name: 'Justin Neil', number: 1 },
+        { name: 'Javon Alleyne', number: 23 },
+        { name: 'Savio Blackman', number: 16 },
+        { name: 'Shamari Best', number: 3 },
+        { name: 'Shaquon Waldrond', number: 14 },
+        { name: 'Devon Wiltshire', number: 15 },
+        { name: 'Reuben Jacobs', number: 8 },
+        { name: 'Zion Gollop', number: 12 },
+        { name: 'Radarico Marques', number: 13 },
+        { name: 'Richem Atherley', number: 11 },
+        { name: 'Shakarie Mottley', number: 9 },
+        { name: 'Shakori Scott', number: 21 },
+        { name: 'Karim Wade', number: 6 },
+        { name: 'Tyrico Bellamy', number: 10 },
+        { name: 'Shakielle Beckles', number: 2 },
+        { name: 'Ramon Rollins', number: 5 },
+        { name: 'Shavon Jones', number: 7 },
+        { name: 'Rajari Rollins', number: 25 }
+    ],
+    17: [
+        { name: 'Corey Bridgeman', number: 21 },
+        { name: 'Ryan Preston', number: null },
+        { name: 'Cliff Gooding-Edghill', number: 3 },
+        { name: 'Shakeel Brown', number: 31 },
+        { name: 'Tadj Nyathu', number: null },
+        { name: 'Yohann Goddard', number: 14 },
+        { name: 'Javier Smith', number: 8 },
+        { name: 'Tavion Eastmond', number: 10 },
+        { name: 'Christopher Jacobs', number: 7 },
+        { name: 'Jemari Trotman', number: 9 },
+        { name: 'Tre Moore', number: 17 },
+        { name: 'Xavier Archer', number: 22 },
+        { name: 'Darren Sammy Jr', number: null },
+        { name: 'Andre Brathwaite', number: 18 },
+        { name: 'Chriseur Harry', number: 11 },
+        { name: 'Sharzeef Thompson', number: 15 },
+        { name: 'Kymani Jones', number: 20 },
+        { name: 'Kyle Smith', number: null }
+    ]
 };
 
 PMC_SCHOOLS.forEach((club, cIdx) => {
     let scrapedForClub = pmcData.players.filter(p => p.teamId === club.rawId);
-    if (scrapedForClub.length === 0 && FALLBACK_CLUB_ROSTERS[club.rawId]) {
-        scrapedForClub = FALLBACK_CLUB_ROSTERS[club.rawId].map((name, idx) => ({
-            id: club.rawId * 1000 + idx + 1,
-            name,
-            number: idx + 1
-        }));
+    
+    // Explicitly override scraped data if a hardcoded true roster exists
+    if (FALLBACK_CLUB_ROSTERS[club.rawId]) {
+        scrapedForClub = FALLBACK_CLUB_ROSTERS[club.rawId].map((entry, idx) => {
+            const isObj = typeof entry === 'object' && entry !== null;
+            return {
+                id: club.rawId * 1000 + idx + 1,
+                name: isObj ? entry.name : entry,
+                number: isObj ? entry.number : idx + 1
+            };
+        });
     }
     const teamId = `${club.id}-team-PMC`;
     const rng = mulberry32(club.rawId || (cIdx + 1) * 100);
@@ -225,4 +289,6 @@ export const DEFAULT_COUNTDOWN_PROTOCOL = [
 ];
 
 // 4. Official Prime Minister's Cup Tournament Matches (Opening Matchday: Monday 07 Sep 2026)
-export const PMC_MATCHES = pmcInitialMatches;
+export const PMC_MATCHES = (pmcBackupData?.data?.matches && Array.isArray(pmcBackupData.data.matches) && pmcBackupData.data.matches.length > 0)
+    ? pmcBackupData.data.matches
+    : pmcInitialMatches;

@@ -72,7 +72,8 @@ export default function PreKickoffCorrectionModal({ match, allPlayers = [], onCl
             correctionData.updatedSquad = {
                 ...currentSquad,
                 startingXI: newXI,
-                benchPlayers: newBench
+                benchPlayers: newBench,
+                lastModified: Date.now()
             };
         } else if (correctionType === 'jersey_change') {
             if (!jerseyPlayerId || !newJerseyNumber) {

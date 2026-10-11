@@ -303,10 +303,10 @@ function App() {
 
   const [pmcStudents, setPmcStudents] = useState(() => {
     try {
-      ['eduvision-pmc-students', 'eduvision-pmc-students-v4', 'eduvision-pmc-students-v5', 'eduvision-pmc-students-v6'].forEach(k => {
+      ['eduvision-pmc-students', 'eduvision-pmc-students-v4', 'eduvision-pmc-students-v5', 'eduvision-pmc-students-v6', 'eduvision-pmc-students-v7', 'eduvision-pmc-students-v8', 'eduvision-pmc-students-v9'].forEach(k => {
         try { localStorage.removeItem(k); } catch {}
       });
-      const saved = localStorage.getItem('eduvision-pmc-students-v7');
+      const saved = localStorage.getItem('eduvision-pmc-students-v10');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -327,7 +327,7 @@ function App() {
 
   useEffect(() => {
     try {
-      localStorage.setItem('eduvision-pmc-students-v7', JSON.stringify(pmcStudents));
+      localStorage.setItem('eduvision-pmc-students-v10', JSON.stringify(pmcStudents));
     } catch {}
   }, [pmcStudents]);
   const [allTeams, setAllTeams] = useState(() => {
@@ -727,8 +727,15 @@ function App() {
   const currentSchool = displaySchools.find(s => s.id === selectedSchool) || { name: 'All Academies' };
 
   // Merge an updated subset of students back into the master list
-  const handleDataUpdate = (updatedSubset) =>
-    setAllStudents(prev => prev.map(s => updatedSubset.find(u => String(u.id) === String(s.id)) || s));
+  const handleDataUpdate = (updatedSubset) => {
+    if (selectedTournament === 'PMC') {
+      setPmcStudents(prev => prev.map(s => updatedSubset.find(u => String(u.id) === String(s.id)) || s));
+    } else if (selectedTournament === 'UCL') {
+      setUclPlayers(prev => prev.map(s => updatedSubset.find(u => String(u.id) === String(s.id)) || s));
+    } else {
+      setAllStudents(prev => prev.map(s => updatedSubset.find(u => String(u.id) === String(s.id)) || s));
+    }
+  };
 
   const handleAddSubject   = (name) => { if (!name || subjects.includes(name)) return; setSubjects(prev => [...prev, name]); setShowAddSubject(false); };
   const handleRemoveSubject = (name) => setSubjects(prev => prev.filter(s => s !== name));

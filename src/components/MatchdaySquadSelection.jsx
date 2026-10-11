@@ -379,37 +379,61 @@ export default function MatchdaySquadSelection({ matches, schoolId, allPlayers, 
 
         try {
             const draftKey = `fs_squad_draft_${selectedMatch.id}_${schoolId}`;
-            localStorage.setItem(draftKey, JSON.stringify(squadPayload));
+            if (isOfficialSubmit) {
+                localStorage.removeItem(draftKey);
+            } else {
+                localStorage.setItem(draftKey, JSON.stringify(squadPayload));
+            }
         } catch {}
 
         return updatedMatch;
     };
 
     // Automatically sync squad state when active match, school, or home/away orientation changes
-    // ARCHITECTURE: localStorage draft is the SINGLE SOURCE OF TRUTH for unsaved squad edits.
-    // The selectedMatch prop may contain stale cloud data due to async polling race conditions.
-    // Only fall back to the prop when NO draft exists for this match+school combination.
+    // Safely arbitrates between local unsubmitted draft and canonical match state
     useEffect(() => {
         if (!selectedMatch) return;
         const squadKey = isHome ? 'homeSquadSelection' : 'awaySquadSelection';
 
-        // Step 1: Always try localStorage draft FIRST — it represents the user's latest edit
-        let savedSquad = null;
+        let draftSquad = null;
         try {
             const draftKey = `fs_squad_draft_${selectedMatch.id}_${schoolId}`;
             const cached = localStorage.getItem(draftKey);
             if (cached) {
                 const parsed = JSON.parse(cached);
-                // If the draft has startingXI data, it's valid — always use it
                 if (parsed && (Array.isArray(parsed.startingXI) || parsed.formation)) {
-                    savedSquad = parsed;
+                    draftSquad = parsed;
                 }
             }
         } catch {}
 
-        // Step 2: Only fall back to the match prop when no valid draft exists
-        if (!savedSquad) {
-            savedSquad = selectedMatch[squadKey];
+        const matchSquad = selectedMatch[squadKey];
+
+        const getSquadTime = (sq) => {
+            if (!sq) return 0;
+            const candidates = [sq.lastModified, sq.submittedAt, sq.confirmedAt, sq.updatedAt];
+            for (const val of candidates) {
+                if (val == null) continue;
+                if (typeof val === 'number' && !isNaN(val) && val > 0) return val;
+                if (typeof val === 'string') {
+                    const parsed = Date.parse(val);
+                    if (!isNaN(parsed) && parsed > 0) return parsed;
+                }
+            }
+            return 0;
+        };
+
+        const draftTime = getSquadTime(draftSquad);
+        const matchTime = getSquadTime(matchSquad);
+
+        let savedSquad = null;
+        // Prioritize match squad if it was officially submitted or if draft is older than match state
+        if (draftSquad && draftTime > matchTime && !matchSquad?.confirmedAt) {
+            savedSquad = draftSquad;
+        } else if (matchSquad) {
+            savedSquad = matchSquad;
+        } else if (draftSquad) {
+            savedSquad = draftSquad;
         }
 
         if (savedSquad) {

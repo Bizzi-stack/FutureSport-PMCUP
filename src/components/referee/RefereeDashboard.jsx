@@ -1038,13 +1038,19 @@ export default function RefereeDashboard({
                     }}
                     onApplyCorrection={(matchId, correctionData) => {
                         const squadKey = correctionData.teamSide === 'home' ? 'homeSquadSelection' : 'awaySquadSelection';
+                        const currentSquad = activeCountdownMatch[squadKey] || {};
+                        const updatedSquad = {
+                            ...(correctionData.updatedSquad || currentSquad),
+                            lastModified: Date.now()
+                        };
                         const updatedMatch = {
                             ...activeCountdownMatch,
-                            [squadKey]: correctionData.updatedSquad || activeCountdownMatch[squadKey],
+                            [squadKey]: updatedSquad,
                             preKickoffCorrections: [
                                 ...(activeCountdownMatch.preKickoffCorrections || []),
                                 correctionData
-                            ]
+                            ],
+                            updatedAt: Date.now()
                         };
                         onUpdateMatch(updatedMatch);
                         setActiveCountdownMatch(updatedMatch);

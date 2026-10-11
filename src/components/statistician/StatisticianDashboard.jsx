@@ -196,6 +196,7 @@ export default function StatisticianDashboard({
 
     // Force Start Match (Field Override if referee whistled on pitch)
     const handleForceStartLiveCapture = (match) => {
+        const now = Date.now();
         const updated = {
             ...match,
             status: 'live',
@@ -203,7 +204,8 @@ export default function StatisticianDashboard({
             matchTime: '00:00',
             homeScore: match.homeScore || 0,
             awayScore: match.awayScore || 0,
-            timeline: match.timeline || []
+            timeline: match.timeline || [],
+            updatedAt: now
         };
         if (onUpdateMatch) onUpdateMatch(updated);
         setSelectedMatchId(match.id);
