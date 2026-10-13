@@ -648,19 +648,19 @@ export default function RefereeDashboard({
                                                 onClick={() => handleKickOff(m)}
                                                 disabled={!bothReady}
                                                 style={{
-                                                    padding: '8px 10px', borderRadius: '8px',
-                                                    background: bothReady ? 'var(--success)' : 'rgba(255,255,255,0.03)',
+                                                    padding: '10px 16px', borderRadius: '10px',
+                                                    background: bothReady ? 'linear-gradient(135deg, #10b981, #059669)' : 'rgba(255,255,255,0.03)',
                                                     color: bothReady ? '#fff' : 'var(--text-muted)',
                                                     border: bothReady ? 'none' : '1px solid rgba(255,255,255,0.08)',
-                                                    fontWeight: '800', fontSize: '11.5px',
+                                                    fontWeight: '800', fontSize: '13px',
                                                     cursor: bothReady ? 'pointer' : 'not-allowed',
                                                     opacity: bothReady ? 1 : 0.6,
-                                                    boxShadow: bothReady ? '0 4px 12px rgba(16,185,129,0.3)' : 'none',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
+                                                    boxShadow: bothReady ? '0 4px 14px rgba(16,185,129,0.35)' : 'none',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                                                     transition: 'all 0.2s'
                                                 }}
                                             >
-                                                {bothReady ? 'Whistle Kick Off' : 'Waiting Squads'}
+                                                {bothReady ? '⚽ Whistle Kick Off' : 'Waiting Squads'}
                                             </button>
                                         </div>
                                     </div>
