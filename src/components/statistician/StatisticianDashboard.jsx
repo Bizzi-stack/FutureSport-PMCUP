@@ -745,11 +745,11 @@ export default function StatisticianDashboard({
                                     <button
                                         onClick={() => handleForceStartLiveCapture(selectedMatch)}
                                         style={{
-                                            padding: '12px 24px', borderRadius: '10px',
+                                            padding: '14px 28px', borderRadius: '12px',
                                             background: 'linear-gradient(135deg, #22c55e, #16a34a)', color: '#ffffff',
-                                            border: 'none', fontSize: '13px', fontWeight: '800', cursor: 'pointer',
-                                            boxShadow: '0 4px 18px rgba(34, 197, 94, 0.4)',
-                                            display: 'flex', alignItems: 'center', gap: '8px'
+                                            border: 'none', fontSize: '14px', fontWeight: '800', cursor: 'pointer',
+                                            boxShadow: '0 4px 20px rgba(34, 197, 94, 0.45)',
+                                            display: 'flex', alignItems: 'center', gap: '9px'
                                         }}
                                     >
                                         👑 Lead Match Controller · Initiate Match Kick-off &amp; Capture

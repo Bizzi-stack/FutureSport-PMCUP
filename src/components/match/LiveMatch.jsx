@@ -1587,51 +1587,68 @@ export default function LiveMatch({
                             <span style={styles.scoreNum}>{awayScore}</span>
                         </div>
                         <div style={styles.timer}>
-                            <span style={{
-                                ...styles.liveDot,
-                                background: isPaused ? 'var(--text-muted)' : 'var(--success)',
-                                animation: isPaused ? 'none' : 'pulse 1.5s infinite'
-                            }} />
-                            <span style={{ marginRight: '10px', fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>
-                                {period === 'HT' ? 'Half-Time' : (
-                                    <>
-                                        {period === '1H' && elapsed > 2700 ? (
-                                            `45:00 +${pad(Math.floor((elapsed - 2700) / 60))}:${pad((elapsed - 2700) % 60)}`
-                                        ) : period === '2H' && elapsed > 5400 ? (
-                                            `90:00 +${pad(Math.floor((elapsed - 5400) / 60))}:${pad((elapsed - 5400) % 60)}`
-                                        ) : (
-                                            `${pad(Math.floor(elapsed / 60))}:${pad(elapsed % 60)}`
-                                        )}
-                                    </>
-                                )}
-                            </span>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 14px', borderRadius: '20px', background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                                <span style={{
+                                    ...styles.liveDot,
+                                    width: '10px',
+                                    height: '10px',
+                                    background: isPaused ? 'var(--text-muted)' : 'var(--success)',
+                                    animation: isPaused ? 'none' : 'pulse 1.5s infinite'
+                                }} />
+                                <span style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '0.03em' }}>
+                                    {period === 'HT' ? 'Half-Time' : (
+                                        <>
+                                            {period === '1H' && elapsed > 2700 ? (
+                                                `45:00 +${pad(Math.floor((elapsed - 2700) / 60))}:${pad((elapsed - 2700) % 60)}`
+                                            ) : period === '2H' && elapsed > 5400 ? (
+                                                `90:00 +${pad(Math.floor((elapsed - 5400) / 60))}:${pad((elapsed - 5400) % 60)}`
+                                            ) : (
+                                                `${pad(Math.floor(elapsed / 60))}:${pad(elapsed % 60)}`
+                                            )}
+                                        </>
+                                    )}
+                                </span>
+                            </div>
                             
                             {captureRole !== 'readonly' ? (
-                                <div style={{ display: 'flex', gap: '6px' }}>
+                                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center', marginTop: '6px' }}>
                                     {period !== 'HT' && (
                                         <button
                                             type="button"
                                             onClick={handleTogglePause}
                                             style={{
-                                                background: 'rgba(255,255,255,0.06)',
-                                                border: '1px solid rgba(255,255,255,0.1)',
-                                                borderRadius: '6px',
-                                                padding: '4px 10px',
-                                                color: 'var(--text-primary)',
-                                                fontSize: '11px',
-                                                fontWeight: '700',
+                                                background: isPaused
+                                                    ? 'linear-gradient(135deg, #10b981, #059669)'
+                                                    : 'rgba(245, 158, 11, 0.16)',
+                                                border: isPaused
+                                                    ? '1.5px solid rgba(16, 185, 129, 0.6)'
+                                                    : '1.5px solid rgba(245, 158, 11, 0.5)',
+                                                borderRadius: '10px',
+                                                padding: '9px 18px',
+                                                color: isPaused ? '#ffffff' : '#fbbf24',
+                                                fontSize: '13px',
+                                                fontWeight: '800',
                                                 cursor: 'pointer',
                                                 fontFamily: 'inherit',
                                                 display: 'inline-flex',
                                                 alignItems: 'center',
-                                                gap: '4px',
+                                                gap: '6px',
                                                 outline: 'none',
-                                                transition: 'all 0.15s ease'
+                                                boxShadow: isPaused ? '0 4px 14px rgba(16, 185, 129, 0.4)' : 'none',
+                                                transition: 'all 0.18s ease'
                                             }}
-                                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.12)'}
-                                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                                            onMouseEnter={e => {
+                                                if (isPaused) e.currentTarget.style.filter = 'brightness(1.1)';
+                                                else e.currentTarget.style.background = 'rgba(245, 158, 11, 0.28)';
+                                            }}
+                                            onMouseLeave={e => {
+                                                if (isPaused) e.currentTarget.style.filter = 'brightness(1)';
+                                                else e.currentTarget.style.background = 'rgba(245, 158, 11, 0.16)';
+                                            }}
                                         >
-                                            {isPaused ? '▶️ Resume' : '⏸️ Pause'}
+                                            {elapsed === 0 && isPaused
+                                                ? '▶️ Start Match'
+                                                : (isPaused ? '▶️ Resume Match' : '⏸️ Pause Match')}
                                         </button>
                                     )}
 
@@ -1640,21 +1657,24 @@ export default function LiveMatch({
                                             type="button"
                                             onClick={handleEndFirstHalf}
                                             style={{
-                                                background: 'rgba(239, 68, 68, 0.12)',
-                                                border: '1px solid rgba(239, 68, 68, 0.25)',
-                                                borderRadius: '6px',
-                                                padding: '4px 10px',
-                                                color: '#f87171',
-                                                fontSize: '11px',
-                                                fontWeight: '700',
+                                                background: 'rgba(239, 68, 68, 0.16)',
+                                                border: '1.5px solid rgba(239, 68, 68, 0.4)',
+                                                borderRadius: '10px',
+                                                padding: '9px 16px',
+                                                color: '#fca5a5',
+                                                fontSize: '13px',
+                                                fontWeight: '800',
                                                 cursor: 'pointer',
                                                 fontFamily: 'inherit',
-                                                transition: 'all 0.15s ease'
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                transition: 'all 0.18s ease'
                                             }}
-                                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
-                                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)'}
+                                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.28)'}
+                                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.16)'}
                                         >
-                                            End 1st Half
+                                            ⏱️ End 1st Half
                                         </button>
                                     )}
 
@@ -1663,21 +1683,25 @@ export default function LiveMatch({
                                             type="button"
                                             onClick={handleStartSecondHalf}
                                             style={{
-                                                background: 'rgba(16, 185, 129, 0.12)',
-                                                border: '1px solid rgba(16, 185, 129, 0.25)',
-                                                borderRadius: '6px',
-                                                padding: '4px 10px',
-                                                color: '#34d399',
-                                                fontSize: '11px',
-                                                fontWeight: '700',
+                                                background: 'linear-gradient(135deg, #10b981, #059669)',
+                                                border: '1.5px solid rgba(16, 185, 129, 0.6)',
+                                                borderRadius: '10px',
+                                                padding: '9px 20px',
+                                                color: '#ffffff',
+                                                fontSize: '13px',
+                                                fontWeight: '800',
                                                 cursor: 'pointer',
                                                 fontFamily: 'inherit',
-                                                transition: 'all 0.15s ease'
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)',
+                                                transition: 'all 0.18s ease'
                                             }}
-                                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(16, 185, 129, 0.2)'}
-                                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(16, 185, 129, 0.12)'}
+                                            onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.1)'}
+                                            onMouseLeave={e => e.currentTarget.style.filter = 'brightness(1)'}
                                         >
-                                            Start 2nd Half
+                                            ▶️ Start 2nd Half
                                         </button>
                                     )}
 
@@ -1685,29 +1709,32 @@ export default function LiveMatch({
                                         type="button"
                                         onClick={() => setShowConfirm(true)}
                                         style={{
-                                            background: 'rgba(239, 68, 68, 0.12)',
-                                            border: '1px solid rgba(239, 68, 68, 0.25)',
-                                            borderRadius: '6px',
-                                            padding: '4px 10px',
-                                            color: '#f87171',
-                                            fontSize: '11px',
-                                            fontWeight: '700',
+                                            background: 'rgba(239, 68, 68, 0.18)',
+                                            border: '1.5px solid rgba(239, 68, 68, 0.45)',
+                                            borderRadius: '10px',
+                                            padding: '9px 18px',
+                                            color: '#ff6b6b',
+                                            fontSize: '13px',
+                                            fontWeight: '800',
                                             cursor: 'pointer',
                                             fontFamily: 'inherit',
-                                            transition: 'all 0.15s ease'
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            transition: 'all 0.18s ease'
                                         }}
-                                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
-                                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)'}
+                                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.32)'}
+                                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.18)'}
                                     >
-                                        End Match
+                                        ⏹️ Stop Match
                                     </button>
                                 </div>
                             ) : (
                                 <div style={{
                                     display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                    padding: '4px 10px', borderRadius: '8px',
+                                    padding: '6px 14px', borderRadius: '10px',
                                     background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.25)',
-                                    fontSize: '11px', fontWeight: '700', color: '#38bdf8'
+                                    fontSize: '12px', fontWeight: '700', color: '#38bdf8'
                                 }}>
                                     <span>🔒</span> Spectator View
                                 </div>
@@ -2622,7 +2649,7 @@ export default function LiveMatch({
                         style={styles.endBtn}
                         onClick={() => setShowConfirm(true)}
                     >
-                        End Match
+                        ⏹️ Stop / End Match
                     </button>
                 ) : (
                     <div style={{
@@ -2807,8 +2834,9 @@ const styles = {
     },
     timer: {
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
-        gap: '6px',
+        gap: '8px',
         marginTop: '8px',
         fontSize: '14px',
         fontWeight: 600,
@@ -3099,29 +3127,32 @@ const styles = {
         borderTop: 'var(--border)',
     },
     cancelBtn: {
-        padding: '10px 20px',
-        borderRadius: '10px',
+        padding: '12px 24px',
+        borderRadius: '12px',
         border: 'var(--border)',
         background: 'var(--bg-card)',
         color: 'var(--text-secondary, #94a3b8)',
-        fontSize: '14px',
-        fontWeight: 600,
-        cursor: 'pointer',
-        fontFamily: 'inherit',
-        transition: 'all 0.2s ease',
-    },
-    endBtn: {
-        padding: '10px 28px',
-        borderRadius: '10px',
-        border: 'none',
-        background: 'var(--danger)',
-        color: '#fff',
         fontSize: '14px',
         fontWeight: 700,
         cursor: 'pointer',
         fontFamily: 'inherit',
         transition: 'all 0.2s ease',
-        boxShadow: 'none',
+    },
+    endBtn: {
+        padding: '13px 32px',
+        borderRadius: '12px',
+        border: '1.5px solid rgba(239, 68, 68, 0.45)',
+        background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+        color: '#fff',
+        fontSize: '15px',
+        fontWeight: 800,
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        transition: 'all 0.2s ease',
+        boxShadow: '0 4px 16px rgba(239, 68, 68, 0.35)',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '8px',
     },
 
     /* Overlay / Confirmation dialog */
@@ -3163,8 +3194,8 @@ const styles = {
         justifyContent: 'center',
     },
     dialogCancelBtn: {
-        padding: '10px 22px',
-        borderRadius: '10px',
+        padding: '12px 24px',
+        borderRadius: '12px',
         border: 'var(--border)',
         background: 'var(--bg-card)',
         color: 'var(--text-secondary, #94a3b8)',
@@ -3175,16 +3206,16 @@ const styles = {
         transition: 'all 0.2s ease',
     },
     dialogConfirmBtn: {
-        padding: '10px 22px',
-        borderRadius: '10px',
+        padding: '12px 28px',
+        borderRadius: '12px',
         border: 'none',
-        background: 'var(--danger)',
+        background: 'linear-gradient(135deg, #ef4444, #dc2626)',
         color: '#fff',
-        fontSize: '14px',
-        fontWeight: 700,
+        fontSize: '15px',
+        fontWeight: 800,
         cursor: 'pointer',
         fontFamily: 'inherit',
         transition: 'all 0.2s ease',
-        boxShadow: 'none',
+        boxShadow: '0 4px 16px rgba(239, 68, 68, 0.35)',
     },
 };
